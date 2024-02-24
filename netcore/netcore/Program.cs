@@ -4,15 +4,15 @@ using System.Reflection.PortableExecutable;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy(name: MyAllowSpecificOrigins,
-                      policy =>
-                      {
-                          policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
-                      });
-});
+//var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
+//builder.Services.AddCors(options =>
+//{
+//    options.AddPolicy(name: MyAllowSpecificOrigins,
+//                      policy =>
+//                      {
+//                          policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
+//                      });
+//});
 
 
 builder.Services.AddControllers();
@@ -26,7 +26,7 @@ ConfigHelper.Configuration = builder.Configuration;
 
 var app = builder.Build();
 
-app.UseCors(MyAllowSpecificOrigins);
+//app.UseCors(MyAllowSpecificOrigins);
 //开启静态文件访问
 app.UseStaticFiles();
 // Configure the HTTP request pipeline.
@@ -40,6 +40,6 @@ app.UseSwaggerUI(c =>
 
 app.UseAuthorization();
 
-app.MapControllers().RequireCors(MyAllowSpecificOrigins);
+app.MapControllers();
 
 app.Run();
