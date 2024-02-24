@@ -40,6 +40,6 @@ app.UseSwaggerUI(c =>
 
 app.UseAuthorization();
 
-app.MapControllers();
+app.MapControllers().RequireCors(MyAllowSpecificOrigins);
 
 app.Run();
