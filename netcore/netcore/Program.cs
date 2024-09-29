@@ -28,7 +28,12 @@ var app = builder.Build();
 
 //app.UseCors(MyAllowSpecificOrigins);
 //开启静态文件访问
-app.UseStaticFiles();
+//app.UseStaticFiles();
+app.UseStaticFiles(new StaticFileOptions
+{
+    ServeUnknownFileTypes = true, // 允许提供未知文件类型
+    DefaultContentType = "application/octet-stream" // 指定默认内容类型
+});
 // Configure the HTTP request pipeline.
 app.UseSwagger();
  
