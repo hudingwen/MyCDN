@@ -1,8 +1,19 @@
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http.Features;
 using System.Reflection.PortableExecutable;
 
 var builder = WebApplication.CreateBuilder(args);
 
+//内置web大小限制
+builder.WebHost.ConfigureKestrel(serverOptions =>
+{
+    serverOptions.Limits.MaxRequestBodySize = 1073741824; // 10GB
+});
+//表单大小限制
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 1073741824; // 10GB
+});
 // Add services to the container.
 //var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 //builder.Services.AddCors(options =>
