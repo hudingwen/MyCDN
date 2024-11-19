@@ -1,12 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration.UserSecrets;
-using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
+using netcore.Dto;
+using SqlSugar;
 using System.Data;
-using System.Diagnostics;
-using System.Net.Http;
-using System.Runtime.InteropServices;
-using System.Text;
+using System.Diagnostics; 
+using System.Runtime.InteropServices; 
 
 namespace netcore.Controllers
 {
@@ -28,6 +25,90 @@ namespace netcore.Controllers
             _hostEnvironment = hostEnvironment;
             _webHostEnvironment = webHostEnvironment;
         }
+        /// <summary>
+        /// 清理文件
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public MessageModel<string> clean()
+        {
+
+            SqlSugarClient db = new SqlSugarClient(new ConnectionConfig()
+            {
+                DbType = SqlSugar.DbType.MySql,
+                ConnectionString = UploadInfo.connectionStr,
+                IsAutoCloseConnection = true
+            });
+            List<string> dataBaseFiles = new List<string>();
+            var picShopList = db.Queryable<AppShopInfo>().Select(t=> new { t.appIcon ,t.appUrl}).ToList();
+            foreach (var item in picShopList)
+            {
+                dataBaseFiles.Add(item.appIcon);
+                dataBaseFiles.Add(item.appUrl);
+            }
+            var picCustomerList = db.Queryable<NightscoutCustomer>().Select(t => new { t.logo }).ToList();
+            foreach(var item in picCustomerList)
+            {
+                dataBaseFiles.Add(item.logo);
+            }
+
+            var localFilesMsg = getFileList(UploadInfo.uploadName, UploadInfo.uploadPass);
+            if (localFilesMsg.success)
+            {
+                foreach (var item in localFilesMsg.response)
+                {
+                    if (!dataBaseFiles.Contains(item.netPath)) 
+                    {
+                        LogHelper.logApp.Info($"删除文件:{item.filePath}");
+                        LogHelper.logApp.Info($"本地路径:{item.netPath}");
+                        System.IO.File.Delete(item.filePath);
+                    }
+                }
+            }
+            
+            return MessageModel<string>.Success("成功");
+        }
+        /// <summary>
+        /// 获取文件列表
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public MessageModel<List<CleanFileDto>> getFileList([FromQuery] string uploadName, [FromQuery] string uploadPass)
+        {
+            if (!(UploadInfo.uploadName.Equals(uploadName) && UploadInfo.uploadPass.Equals(uploadPass)))
+                return MessageModel<List<CleanFileDto>>.Fail("账号密码验证错误");
+
+            List<CleanFileDto> list = new List<CleanFileDto>();
+            var dicPath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot"));
+
+            var files = Directory.GetFiles(dicPath);
+            var dics = Directory.GetDirectories(dicPath);
+            getFileList(dicPath, list, files, dics);
+
+            return MessageModel<List<CleanFileDto>>.Success("成功", list);
+        }
+        private void getFileList(string rootPath,List<CleanFileDto> list, string[] files, string[] dics)
+        {
+            if(files.Length > 0)
+            {
+                foreach(var file in files)
+                {
+                    var formatFile = Path.GetFullPath(file);
+                    var url = formatFile.Replace(rootPath, "").Replace($@"\","/");
+                    list.Add(new CleanFileDto {  netPath= UploadInfo.uploadUrl + url,filePath = formatFile });
+                }
+            }
+            if (dics.Length > 0)
+            {
+                foreach (var dic in dics)
+                {
+                    var filesNext = Directory.GetFiles(dic);
+                    var dicsNext = Directory.GetDirectories(dic);
+                    getFileList(rootPath, list, filesNext, dicsNext);
+                }
+            }
+        }
+
         /// <summary>
         /// 服务器配置信息
         /// </summary>
@@ -138,5 +219,7 @@ namespace netcore.Controllers
 
 
         }
+
+
     }
 }

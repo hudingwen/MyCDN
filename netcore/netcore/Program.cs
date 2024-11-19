@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http.Features;
+using netcore.Config;
 using System.Reflection.PortableExecutable;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -27,6 +28,8 @@ builder.Services.Configure<FormOptions>(options =>
 
 
 builder.Services.AddControllers();
+//ÈÕÖ¾¿ªÆô
+builder.SetLog4Net();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

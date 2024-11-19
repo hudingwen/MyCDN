@@ -3,6 +3,7 @@
     public static class UploadInfo
     {
 
+        public static readonly string connectionStr = ConfigHelper.GetValue(new string[] { "connectionStr" });
         public static readonly string uploadUrl = ConfigHelper.GetValue(new string[] { "uploadInfo", "uploadUrl" });
         public static readonly string uploadName = ConfigHelper.GetValue(new string[] { "uploadInfo", "uploadName" });
         public static readonly string uploadPass = ConfigHelper.GetValue(new string[] { "uploadInfo", "uploadPass" });
