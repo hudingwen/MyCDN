@@ -30,8 +30,10 @@ namespace netcore.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        public MessageModel<string> clean()
+        public MessageModel<string> clean([FromQuery] string uploadName, [FromQuery] string uploadPass)
         {
+            if (!(UploadInfo.uploadName.Equals(uploadName) && UploadInfo.uploadPass.Equals(uploadPass)))
+                return MessageModel<string>.Fail("账号密码验证错误");
 
             SqlSugarClient db = new SqlSugarClient(new ConnectionConfig()
             {
@@ -39,17 +41,23 @@ namespace netcore.Controllers
                 ConnectionString = UploadInfo.connectionStr,
                 IsAutoCloseConnection = true
             });
-            List<string> dataBaseFiles = new List<string>();
+            List<DataBaseFileDto> dataBaseFiles = new List<DataBaseFileDto>();
             var picShopList = db.Queryable<AppShopInfo>().Select(t=> new { t.appIcon ,t.appUrl}).ToList();
             foreach (var item in picShopList)
             {
-                dataBaseFiles.Add(item.appIcon);
-                dataBaseFiles.Add(item.appUrl);
+                dataBaseFiles.Add(new DataBaseFileDto { netPath = item.appIcon ,fileNmae = Path.GetFileName(item.appIcon) });
+                dataBaseFiles.Add(new DataBaseFileDto { netPath = item.appUrl, fileNmae = Path.GetFileName(item.appUrl) }); 
             }
             var picCustomerList = db.Queryable<NightscoutCustomer>().Select(t => new { t.logo }).ToList();
             foreach(var item in picCustomerList)
             {
-                dataBaseFiles.Add(item.logo);
+                dataBaseFiles.Add(new DataBaseFileDto { netPath = item.logo, fileNmae = Path.GetFileName(item.logo) }); 
+            }
+
+            var picOtherList = db.Queryable<FileRecord>().Select(t => new { t.fileUrl }).ToList();
+            foreach (var item in picOtherList)
+            {
+                dataBaseFiles.Add(new DataBaseFileDto { netPath = item.fileUrl, fileNmae = Path.GetFileName(item.fileUrl) }); 
             }
 
             var localFilesMsg = getFileList(UploadInfo.uploadName, UploadInfo.uploadPass);
@@ -57,7 +65,7 @@ namespace netcore.Controllers
             {
                 foreach (var item in localFilesMsg.response)
                 {
-                    if (!dataBaseFiles.Contains(item.netPath)) 
+                    if (!dataBaseFiles.Exists(t=>t.fileNmae.Contains(item.fileName))  && !dataBaseFiles.Exists(t => t.netPath.Contains(item.netPath))) 
                     {
                         LogHelper.logApp.Info($"删除文件:{item.filePath}");
                         LogHelper.logApp.Info($"本地路径:{item.netPath}");
@@ -94,8 +102,9 @@ namespace netcore.Controllers
                 foreach(var file in files)
                 {
                     var formatFile = Path.GetFullPath(file);
+                    var fileName = Path.GetFileName(file);
                     var url = formatFile.Replace(rootPath, "").Replace($@"\","/");
-                    list.Add(new CleanFileDto {  netPath= UploadInfo.uploadUrl + url,filePath = formatFile });
+                    list.Add(new CleanFileDto {  netPath= UploadInfo.uploadUrl + url,filePath = formatFile,fileName = fileName });
                 }
             }
             if (dics.Length > 0)
