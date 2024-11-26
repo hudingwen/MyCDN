@@ -147,7 +147,7 @@ namespace netcore.Controllers
         {
             try
             {
-                if(!(UploadInfo.uploadName.Equals(uploadName) && UploadInfo.uploadPass.Equals(uploadPass)))
+                if (!(UploadInfo.uploadName.Equals(uploadName) && UploadInfo.uploadPass.Equals(uploadPass)))
                     return MessageModel<string>.Fail("账号密码验证错误");
 
                 if (file == null || file.Length == 0)
@@ -180,6 +180,68 @@ namespace netcore.Controllers
             catch (Exception ex)
             {
                 return MessageModel<string>.Fail($"文件上传异常:{ex.Message}");
+            }
+        }
+        /// <summary>
+        /// 文件上传-富文本编辑器专用
+        /// </summary>
+        /// <param name="file"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<EditorDto> upForEditor(IFormFile file, [FromQuery] string uploadName, [FromQuery] string uploadPass)
+        {
+            EditorDto editorDto = new EditorDto();
+            try
+            {
+                if(!(UploadInfo.uploadName.Equals(uploadName) && UploadInfo.uploadPass.Equals(uploadPass)))
+                {
+                    editorDto.errno = 1;
+                    editorDto.message = "账号密码验证错误";
+                    return editorDto;
+                }
+                   
+
+                if (file == null || file.Length == 0)
+                {
+                    editorDto.errno = 1;
+                    editorDto.message = "请选择要上传的文件";
+                    return editorDto; 
+                }
+
+                string year = DateTime.Now.ToString("yyyy");
+                string date = DateTime.Now.ToString("yyyyMMdd");
+                string dic = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", year, date);
+                if (!Directory.Exists(dic))
+                    Directory.CreateDirectory(dic);
+
+                var suffix = Path.GetExtension(file.FileName);
+                var name = $"{date}_{StringHelper.GetGUID()}{suffix}";
+
+                if (!UploadInfo.allowTypes.Contains(suffix))
+                {
+                    editorDto.errno = 1;
+                    editorDto.message = $"文件类型不支持:{suffix}";
+                    return editorDto; 
+                }
+
+                var path = Path.Combine(dic, name);
+
+                using (var stream = new FileStream(path, FileMode.Create))
+                {
+                    await file.CopyToAsync(stream);
+                }
+                var url = $"{UploadInfo.uploadUrl}/{year}/{date}/{name}";
+
+                editorDto.errno = 0;
+                editorDto.message = "文件上传成功";
+                editorDto.data.url = url;
+                return editorDto; 
+            }
+            catch (Exception ex)
+            {
+                editorDto.errno = 1;
+                editorDto.message = $"文件上传异常:{ex.Message}"; 
+                return editorDto; 
             }
         }
 
